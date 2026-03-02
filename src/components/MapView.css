@@ -1,0 +1,79 @@
+/* src/components/MapView.css */
+
+.map-view-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+}
+
+.map-placeholder {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--color-bg-secondary);
+  border: 2px dashed var(--color-border);
+  border-radius: 2px;
+  max-width: 500px;
+}
+
+.map-placeholder h2 {
+  font-size: 18px;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.map-info {
+  text-align: left;
+}
+
+.map-info p {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  margin-bottom: var(--spacing-md);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.map-info ul {
+  list-style: none;
+  margin-bottom: var(--spacing-lg);
+}
+
+.map-info li {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  padding: var(--spacing-sm) 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.stat strong {
+  font-size: 24px;
+  color: var(--color-critical);
+}
+
+.stat span {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

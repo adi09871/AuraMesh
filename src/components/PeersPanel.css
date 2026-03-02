@@ -1,0 +1,165 @@
+/* src/components/PeersPanel.css */
+
+.peers-panel-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  height: 100%;
+}
+
+.peers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.peers-header h2 {
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+
+.peer-count {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  font-size: 11px;
+  color: var(--color-info);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.peers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.peer-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.peer-card:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-info);
+}
+
+.peer-card.connection-bluetooth {
+  border-left: 3px solid var(--color-warning);
+}
+
+.peer-card.connection-webrtc {
+  border-left: 3px solid var(--color-safe);
+}
+
+.peer-card.connection-direct {
+  border-left: 3px solid var(--color-info);
+}
+
+.peer-connection-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  color: var(--color-info);
+}
+
+.peer-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.peer-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+  word-break: break-all;
+  font-family: var(--font-display);
+}
+
+.peer-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.detail .label {
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail .value {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.signal-bars {
+  display: flex;
+  gap: 2px;
+}
+
+.signal-bars span {
+  width: 3px;
+  height: 10px;
+  background: var(--color-border);
+  border-radius: 1px;
+}
+
+.signal-bars span.active {
+  background: var(--color-safe);
+}
+
+.peer-status {
+  flex-shrink: 0;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-safe);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.peers-footer {
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .peers-grid {
+    grid-template-columns: 1fr;
+  }
+}

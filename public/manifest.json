@@ -1,0 +1,49 @@
+{
+  "short_name": "AuraMesh",
+  "name": "AuraMesh - Emergency Communication",
+  "description": "Decentralized offline-first emergency communication system. No internet required.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%230a0a0a' width='192' height='192'/><path fill='%23ef2b2d' d='M96 24 L118 92 L192 92 L139 150 L161 218 L96 160 L31 218 L53 150 L0 92 L74 92 Z'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0a0a' width='512' height='512'/><path fill='%23ef2b2d' d='M256 64 L314 244 L512 244 L370 400 L428 580 L256 424 L84 580 L142 400 L0 244 L198 244 Z'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0a0a0a",
+  "display": "fullscreen",
+  "scope": "/",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "categories": ["utilities", "emergency"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%230a0a0a' width='540' height='720'/><rect fill='%23ef2b2d' width='540' height='60'/><text x='270' y='40' fill='white' font-size='24' text-anchor='middle' font-family='monospace' font-weight='bold'>AURAMESH</text><circle cx='270' cy='300' r='80' fill='none' stroke='%23ef2b2d' stroke-width='3'/><text x='270' y='310' fill='white' font-size='48' text-anchor='middle' font-family='monospace' font-weight='bold'>SOS</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Send SOS",
+      "short_name": "SOS",
+      "description": "Quickly send an emergency signal",
+      "url": "/?mode=sos",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23ef2b2d' width='96' height='96'/><circle cx='48' cy='48' r='30' fill='white'/><text x='48' y='55' fill='%23ef2b2d' font-size='32' text-anchor='middle' font-weight='bold'>!</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

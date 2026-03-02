@@ -1,0 +1,47 @@
+{
+  "name": "auramesh",
+  "version": "1.0.0",
+  "description": "Decentralized Emergency Communication System",
+  "private": true,
+  "homepage": "./",
+  "dependencies": {
+    "dexie": "^3.2.4",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.368.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.3.3",
+    "workbox-cli": "^7.0.0",
+    "workbox-window": "^7.0.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.8",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "react-scripts": "^5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
