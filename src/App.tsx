@@ -1,13 +1,16 @@
 // src/App.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from './store/appStore';
-import { AlertCircle, Wifi, Bluetooth, Radio, Settings, Map as MapIcon, BarChart3, Users } from 'lucide-react';
+import { AlertCircle, Bluetooth, Radio, Settings, Map as MapIcon, BarChart3, Users } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import EventLog from './components/EventLog';
 import PeersPanel from './components/PeersPanel';
 import SettingsPanel from './components/SettingsPanel';
 import MapView from './components/MapView';
 import { dbService } from './services/db';
+import { acousticService } from './services/acousticService';
+import { alertService } from './services/alertService';
+import { meshService } from './services/meshService';
 import './App.css';
 
 function App() {
@@ -22,39 +25,63 @@ function App() {
     setMicActive,
     setBluetoothActive,
     setPeerCount,
+    updatePeer,
+    addKeywordDetection,
+    addSOSMessage,
+    addEvent,
+    peers,
   } = useAppStore();
 
-  const [isInitialized, setIsInitialized] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [storageStatus, setStorageStatus] = useState('--');
+  const settingsRef = useRef(userSettings);
 
-  // useEffect(() => {
-  //   initializeApp();
-  // }, []);
+  // Keep settingsRef in sync so callbacks always have latest settings
+  useEffect(() => {
+    settingsRef.current = userSettings;
+  }, [userSettings]);
 
-  // useEffect(() => {
-  //   const updateStorage = async () => {
-  //     const metrics = await dbService.getStorageMetrics();
-  //     setStorageStatus(`${metrics.totalEvents} events`);
-  //   };
-  //   updateStorage();
-  //   const interval = setInterval(updateStorage, 30000);
-  //   return () => clearInterval(interval);
-  // }, []);
+  // ── App Initialization ─────────────────────────────────────────────────
+  useEffect(() => {
+    initializeApp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Storage status polling (every 30s) ─────────────────────────────────
+  useEffect(() => {
+    if (!isInitialized) return;
+    const updateStorage = async () => {
+      const metrics = await dbService.getStorageMetrics();
+      setStorageStatus(`${metrics.totalEvents} events · ${metrics.storageUsedMB} MB`);
+    };
+    updateStorage();
+    const interval = setInterval(updateStorage, 30_000);
+    return () => clearInterval(interval);
+  }, [isInitialized]);
+
+  // ── Peer count sync ────────────────────────────────────────────────────
+  useEffect(() => {
+    setPeerCount(peers.size);
+  }, [peers, setPeerCount]);
+
+  // ── Service teardown on unmount ────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      acousticService.stopListening();
+      meshService.stopMesh();
+    };
+  }, []);
 
   const initializeApp = async () => {
     try {
-      // Initialize user settings if not present
+      // ── Load / create user settings ──────────────────────────────────
       let settings = await dbService.getUserSettings('default-user');
       if (!settings) {
         settings = {
           userId: 'default-user',
           deviceId: `device_${Math.random().toString(36).substr(2, 9)}`,
           alias: `AuraMesh-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-          alertModes: {
-            haptic: true,
-            visual: true,
-            audio: true,
-          },
+          alertModes: { haptic: true, visual: true, audio: true },
           akdEnabled: true,
           akdConfidenceThreshold: 0.75,
           emergencyKeywords: ['SOS', 'fire', 'help', 'earthquake', 'flood', 'danger', 'emergency'],
@@ -62,13 +89,97 @@ function App() {
         };
         await dbService.saveUserSettings(settings);
       }
-
       setUserSettings(settings);
-      setMicActive(true);
+
+      // ── Boot Mesh Service ────────────────────────────────────────────
+      meshService.startMesh(
+        settings.deviceId,
+        settings.alias,
+        // onPeerUpdate
+        async (peer) => {
+          await updatePeer(peer);
+        },
+        // onMessageReceived
+        async (msg) => {
+          await addEvent({
+            type: 'system',
+            severity: 'info',
+            title: `Mesh message received [${msg.type}]`,
+            description: `From ${msg.senderAlias || msg.senderId} · hop ${msg.hopCount}/${msg.maxHops}`,
+            timestamp: msg.timestamp,
+          });
+        },
+        // onSOSReceived
+        async (sos) => {
+          await addSOSMessage(sos);
+          if (settingsRef.current) {
+            alertService.triggerAlert(
+              {
+                id: `alert_${Date.now()}`,
+                type: 'sos',
+                severity: 'critical',
+                timestamp: Date.now(),
+                title: `Incoming SOS from ${sos.userId}`,
+                description: `Emergency type: ${sos.emergencyType}`,
+              },
+              settingsRef.current
+            );
+          }
+        }
+      );
       setBluetoothActive(true);
+
+      // ── Boot Acoustic Monitoring (if enabled) ────────────────────────
+      if (settings.akdEnabled) {
+        try {
+          await acousticService.startListening(
+            // onDetection
+            async (keyword, confidence, transcript) => {
+              await addKeywordDetection({
+                timestamp: Date.now(),
+                keyword,
+                confidence,
+                deviceId: settings!.deviceId,
+              });
+
+              if (settingsRef.current) {
+                alertService.triggerAlert(
+                  {
+                    id: `alert_${Date.now()}`,
+                    type: 'keyword',
+                    severity: confidence > 0.85 ? 'critical' : 'warning',
+                    timestamp: Date.now(),
+                    title: `Keyword Detected: "${keyword}"`,
+                    description: `Confidence ${(confidence * 100).toFixed(1)}% · "${transcript}"`,
+                  },
+                  settingsRef.current
+                );
+              }
+            },
+            // onAudioLevel (we update store/UI via callback — no-op at App level, Dashboard handles it)
+            (_level) => { },
+            settings
+          );
+          setMicActive(true);
+        } catch {
+          // User denied mic or browser doesn't support — graceful degradation
+          setMicActive(false);
+        }
+      }
+
+      // ── Log system startup event ─────────────────────────────────────
+      await addEvent({
+        type: 'system',
+        severity: 'info',
+        title: 'AuraMesh Initialized',
+        description: `Device: ${settings.alias} · Mesh: active · AKD: ${settings.akdEnabled ? 'active' : 'off'}`,
+        timestamp: Date.now(),
+      });
+
       setIsInitialized(true);
     } catch (error) {
-      console.error('Failed to initialize app:', error);
+      console.error('Failed to initialize AuraMesh:', error);
+      setIsInitialized(true); // Show UI anyway
     }
   };
 

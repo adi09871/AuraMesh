@@ -4,7 +4,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-lg);
-  auto-rows: max-content;
+
 }
 
 /* === SOS PANEL === */
@@ -37,9 +37,19 @@
 }
 
 @keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(1.1); }
-  50% { transform: scale(1); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  25% {
+    transform: scale(1.1);
+  }
+
+  50% {
+    transform: scale(1);
+  }
 }
 
 /* SOS Button */
@@ -98,9 +108,18 @@
 }
 
 @keyframes sos-press {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(239, 43, 45, 0); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 20px rgba(239, 43, 45, 0);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .sos-button.confirm-mode {
@@ -110,8 +129,15 @@
 }
 
 @keyframes sos-confirm-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-  50% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+
+  50% {
+    box-shadow: 0 0 0 20px rgba(245, 158, 11, 0);
+  }
 }
 
 .sos-pulse {
@@ -129,6 +155,7 @@
     transform: scale(1);
     opacity: 1;
   }
+
   100% {
     transform: scale(2);
     opacity: 0;
@@ -147,8 +174,13 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .sos-prompt p {
@@ -223,6 +255,59 @@
   gap: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--color-border);
+}
+
+/* Audio level meter */
+.audio-level-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 2px;
+}
+
+.audio-level-label {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.audio-level-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: var(--color-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.audio-level-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.08s linear, background 0.2s ease;
+}
+
+/* SOS button sending state */
+.sos-button.sending {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  cursor: not-allowed;
+  opacity: 0.8;
+  animation: sos-sending 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes sos-sending {
+  from {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+
+  to {
+    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0);
+  }
 }
 
 .status-badge {

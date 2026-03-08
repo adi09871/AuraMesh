@@ -1,29 +1,43 @@
 // src/components/PeersPanel.tsx
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/appStore';
-import { Bluetooth, Radio, Wifi } from 'lucide-react';
+import { Bluetooth, Radio, Wifi, RefreshCw } from 'lucide-react';
+import { meshService } from '../services/meshService';
 import './PeersPanel.css';
 
 function PeersPanel() {
-  const { peers, loadActivePeers } = useAppStore();
+  const { peers, loadActivePeers, updatePeer } = useAppStore();
+  const [scanning, setScanning] = useState(false);
 
-  // useEffect(() => {
-  //   loadActivePeers();
-  //   const interval = setInterval(() => loadActivePeers(), 10000);
-  //   return () => clearInterval(interval);
-  // }, [loadActivePeers]);
+  // Load active peers from DB on mount and refresh every 10s
+  useEffect(() => {
+    loadActivePeers();
+    const interval = setInterval(() => loadActivePeers(), 10_000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const peerList = Array.from(peers.values());
 
   const getConnectionIcon = (type: string) => {
     switch (type) {
-      case 'bluetooth':
-        return <Bluetooth size={16} />;
-      case 'webrtc':
-        return <Wifi size={16} />;
-      default:
-        return <Radio size={16} />;
+      case 'bluetooth': return <Bluetooth size={16} />;
+      case 'webrtc': return <Wifi size={16} />;
+      default: return <Radio size={16} />;
+    }
+  };
+
+  const handleScanBluetooth = async () => {
+    setScanning(true);
+    try {
+      await meshService.scanBluetooth(async (peer) => {
+        await updatePeer(peer);
+      });
+    } catch (err) {
+      console.warn('[PeersPanel] Bluetooth scan cancelled or failed:', err);
+    } finally {
+      setScanning(false);
     }
   };
 
@@ -31,13 +45,27 @@ function PeersPanel() {
     <div className="peers-panel-container">
       <div className="peers-header">
         <h2>Connected Peers</h2>
-        <span className="peer-count">{peerList.length} active</span>
+        <div className="peers-header-actions">
+          <span className="peer-count">{peerList.length} active</span>
+          <button
+            className={`btn-scan ${scanning ? 'scanning' : ''}`}
+            onClick={handleScanBluetooth}
+            disabled={scanning}
+            title="Scan for Bluetooth peers"
+          >
+            <RefreshCw size={14} className={scanning ? 'spin' : ''} />
+            {scanning ? 'Scanning…' : 'Scan BLE'}
+          </button>
+        </div>
       </div>
 
       {peerList.length === 0 ? (
         <div className="empty-state">
           <p>No active peers detected.</p>
-          <small>Peers will appear when devices connect via Bluetooth or WebRTC on your local network.</small>
+          <small>
+            Open AuraMesh in another browser tab to see same-origin peers, or use "Scan BLE" to
+            find nearby Bluetooth devices.
+          </small>
         </div>
       ) : (
         <div className="peers-grid">
@@ -84,7 +112,9 @@ function PeersPanel() {
       )}
 
       <div className="peers-footer">
-        <small>Peers connect automatically via Bluetooth (proximity) or WebRTC (same local network)</small>
+        <small>
+          Peers connect via BroadcastChannel (same browser) · Bluetooth · WebRTC (coming in Phase 3)
+        </small>
       </div>
     </div>
   );
