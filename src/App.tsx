@@ -112,19 +112,10 @@ function App() {
         // onSOSReceived
         async (sos) => {
           await addSOSMessage(sos);
-          if (settingsRef.current) {
-            alertService.triggerAlert(
-              {
-                id: `alert_${Date.now()}`,
-                type: 'sos',
-                severity: 'critical',
-                timestamp: Date.now(),
-                title: `Incoming SOS from ${sos.userId}`,
-                description: `Emergency type: ${sos.emergencyType}`,
-              },
-              settingsRef.current
-            );
-          }
+          alertService.triggerAlert(
+            `Incoming SOS from ${sos.userId}: ${sos.emergencyType}`,
+            'critical'
+          );
         }
       );
       setBluetoothActive(true);
@@ -132,40 +123,16 @@ function App() {
       // ── Boot Acoustic Monitoring (if enabled) ────────────────────────
       if (settings.akdEnabled) {
         try {
-          await acousticService.startListening(
-            // onDetection
-            async (keyword, confidence, transcript) => {
-              await addKeywordDetection({
-                timestamp: Date.now(),
-                keyword,
-                confidence,
-                deviceId: settings!.deviceId,
-              });
-
-              if (settingsRef.current) {
-                alertService.triggerAlert(
-                  {
-                    id: `alert_${Date.now()}`,
-                    type: 'keyword',
-                    severity: confidence > 0.85 ? 'critical' : 'warning',
-                    timestamp: Date.now(),
-                    title: `Keyword Detected: "${keyword}"`,
-                    description: `Confidence ${(confidence * 100).toFixed(1)}% · "${transcript}"`,
-                  },
-                  settingsRef.current
-                );
-              }
-            },
-            // onAudioLevel (we update store/UI via callback — no-op at App level, Dashboard handles it)
-            (_level) => { },
-            settings
-          );
+          await acousticService.startListening();
           setMicActive(true);
         } catch {
           // User denied mic or browser doesn't support — graceful degradation
           setMicActive(false);
         }
       }
+
+      // ── Heartbeat so peers can discover this device ──────────────────
+      meshService.sendHeartbeat();
 
       // ── Log system startup event ─────────────────────────────────────
       await addEvent({

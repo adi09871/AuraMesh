@@ -1,0 +1,113 @@
+# AuraMesh Backend Logic Implementation Plan
+
+AuraMesh currently has its UI foundation and IndexedDB layer in place, but all runtime service calls are commented out. This plan wires in the full backend logic according to the README roadmap — covering app initialization, acoustic keyword detection, multi-modal alerts, and P2P mesh communication stubs.
+
+---
+
+## Proposed Changes
+
+### 1 – App Initialization
+
+#### [MODIFY] [App.tsx](file:///c:/Users/adit1/Desktop/auramesh/src/App.tsx)
+- Uncomment and activate [initializeApp()](file:///c:/Users/adit1/Desktop/auramesh/src/App.tsx#44-74) in the startup `useEffect`
+- Uncomment the storage-polling `useEffect` (updates footer every 30s)
+- Set `isInitialized` to `false` as default so the splash screen shows during load
+- After init, boot all background services (acoustic, mesh)
+
+---
+
+### 2 – Acoustic Keyword Detection Service
+
+#### [NEW] [acousticService.ts](file:///c:/Users/adit1/Desktop/auramesh/src/services/acousticService.ts)
+
+A self-contained service built on **Web Audio API**. No external dependency needed for Phase 1 — uses energy-based voice activity detection (VAD) + keyword spotting via SpeechRecognition. Key design: all processing is **on-device only**.
+
+- `startListening(onDetection, settings)` — requests mic, sets up `AudioContext` + `AnalyserNode`, attaches `webkitSpeechRecognition` (or `SpeechRecognition`) in continuous mode for keyword matching
+- `stopListening()` — stops recognition and closes audio stream
+- `getAudioLevel()` — returns current dB level (for UI indicator)
+- On keyword match, calls `onDetection(keyword, confidence)` callback which triggers the store action [addKeywordDetection](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#129-147)
+- Emergency keywords from user settings are matched (SOS, fire, help, earthquake, flood, danger, emergency)
+
+> **No new npm package needed** — uses the browser's built-in Web Speech API (`SpeechRecognition`).
+
+---
+
+### 3 – Multi-Modal Alert Service
+
+#### [NEW] [alertService.ts](file:///c:/Users/adit1/Desktop/auramesh/src/services/alertService.ts)
+
+Dispatches alerts using all enabled modalities from user settings.
+
+- `triggerAlert(event, settings)` — dispatches haptic + visual + audio based on `settings.alertModes`
+- `hapticAlert(severity)` — calls `navigator.vibrate` with severity-coded patterns
+  - critical: `[300, 100, 300, 100, 300]`
+  - warning: `[200, 100, 200]`
+  - info: `[100]`
+- `visualAlert(severity)` — injects CSS class `alert-flash-[severity]` on `document.body`, auto-removes after animation
+- `audioAlert(message)` — uses `SpeechSynthesisUtterance` to read the alert message aloud
+- `playTone(freq, duration)` — plays a beep via `AudioContext` for environments where TTS is unavailable
+
+> **No new npm package needed** — all browser native APIs.
+
+---
+
+### 4 – P2P Mesh Communication Service
+
+#### [NEW] [meshService.ts](file:///c:/Users/adit1/Desktop/auramesh/src/services/meshService.ts)
+
+Provides peer discovery and message relay. Uses **WebRTC** for same-network peers and **Web Bluetooth** for proximity peers. This is a Phase 3 stub that's architected for real data channels but uses simulation for discovery.
+
+- `startMesh(onPeerUpdate, onMessageReceived)` — boot mesh scanning
+- `stopMesh()` — teardown
+- `broadcastSOS(message)` — relay SOS to all connected peers via RTCDataChannel
+- `sendHeartbeat()` — periodic ping to keep peers alive
+- `discoverPeers()` — scan BLE + WebRTC signaling (in Phase 3 this uses a signaling server; for now uses `BroadcastChannel` API within same browser for testing)
+- Duplicate detection via UUID set
+- Hop count enforcement (max 5 hops)
+- Peer data is stored via `dbService.savePeer` and surfaced in store via [updatePeer](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#162-185)
+
+> **No new npm package needed** — uses browser-native WebRTC, Web Bluetooth, and BroadcastChannel APIs.
+
+---
+
+### 5 – Wiring Services into Components & Store
+
+#### [MODIFY] [App.tsx](file:///c:/Users/adit1/Desktop/auramesh/src/App.tsx)
+- After [initializeApp](file:///c:/Users/adit1/Desktop/auramesh/src/App.tsx#44-74), start acoustic monitoring if `userSettings.akdEnabled`
+- Start mesh service and register callbacks to [updatePeer](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#162-185), [addKeywordDetection](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#129-147), [addSOSMessage](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#110-128)
+- Clean up services on component unmount
+
+#### [MODIFY] [Dashboard.tsx](file:///c:/Users/adit1/Desktop/auramesh/src/components/Dashboard.tsx)
+- Uncomment [loadEvents](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#148-152) useEffect
+- Uncomment `updateStats` useEffect
+- Fix SOS confirm flow: after [handleSOSConfirm](file:///c:/Users/adit1/Desktop/auramesh/src/components/Dashboard.tsx#48-89), trigger `alertService.triggerAlert`
+- Add mic level indicator (live dB bar) using `acousticService.getAudioLevel`
+
+#### [MODIFY] [PeersPanel.tsx](file:///c:/Users/adit1/Desktop/auramesh/src/components/PeersPanel.tsx)
+- Uncomment [loadActivePeers](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#196-201) useEffect
+- Add "Scan for Peers" button that calls `meshService.discoverPeers`
+
+#### [MODIFY] [appStore.ts](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts)
+- Add [setLastAlertTime](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#204-205) action (already typed, just needs implementation)
+- Ensure [filterEvents](file:///c:/Users/adit1/Desktop/auramesh/src/store/appStore.ts#153-156) updates `filterType` / `filterSeverity` in state (currently does, confirm works)
+
+---
+
+## Verification Plan
+
+### Build Check
+```bash
+cd c:\Users\adit1\Desktop\auramesh
+npm run build
+```
+Must complete with 0 TypeScript errors.
+
+### Manual Verification (in browser at `http://localhost:3000`)
+
+1. **App Init**: Refresh page → splash screen briefly shows → Dashboard loads with device alias in header → IndexedDB [AuraMeshDB](file:///c:/Users/adit1/Desktop/auramesh/src/services/db.ts#6-24) visible in DevTools → Application → IndexedDB
+2. **SOS Flow**: Click SOS button → click again to confirm → click "CONFIRM & BROADCAST" → new critical event appears in Event Feed → IndexedDB `sos_messages` table has a new row
+3. **Acoustic Monitoring**: Go to Settings → AKD is enabled → on Dashboard, mic status badge shows ACTIVE → say "help" or "fire" → keyword event appears in feed (Chrome only)
+4. **Alert Modalities**: Go to Settings → click "Test Alert" → device vibrates (mobile) + page flashes + TTS reads "Test alert received"
+5. **Peers Panel**: Click Peers tab → shows empty state initially → after mesh service boots, the tab updates
+6. **Storage Footer**: Footer shows event count; updates every 30 seconds
+
