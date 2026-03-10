@@ -12,7 +12,7 @@ export class AuraMeshDB extends Dexie {
 
   constructor() {
     super('AuraMeshDB');
-    this.version(1).stores({
+    this.version(2).stores({
       sos_messages: '++id, timestamp, userId, deviceId, sourceDevice',
       keyword_detections: '++id, timestamp, keyword, deviceId',
       events: '++id, timestamp, type, severity',
